@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新增学生 - 学生管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 550px;
+            max-width: 100%;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        /* 错误提示 */
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+            white-space: pre-line;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+
+        /* 表单组 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .required::after {
+            content: " *";
+            color: #e53e3e;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="email"],
+        input[type="tel"],
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input.error,
+        select.error {
+            border-color: #e53e3e;
+            background: #fff5f5;
+        }
+
+        .error-msg {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* 单选框 */
+        .radio-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .radio-group input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        /* 按钮 */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-reset {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+
+        .btn-back {
+            background: #718096;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>📝 新增学生信息</h2>
+    <p class="subtitle">请填写以下信息（带 * 为必填项）</p>
+
+    <!-- 错误提示区域 -->
+    <div class="alert alert-error" id="errorAlert"
+         th:if="${error}" th:text="${error}"></div>
+
+    <!-- 成功提示 -->
+    <div class="alert alert-success"
+         th:if="${success}" th:text="${success}"></div>
+
+    <!-- ==================== 表单（带验证） ==================== -->
+    <form id="studentForm" action="/student/save" method="post" onsubmit="return validateForm()">
+
+        <!-- 学号 -->
+        <div class="form-group">
+            <label class="required">学号</label>
+            <input type="text" id="studentNo" name="studentNo"
+                   placeholder="请输入6-10位数字学号（如：2024001）"
+                   onblur="validateStudentNo()">
+            <span class="error-msg" id="studentNoError">请输入正确的学号格式（6-10位数字）</span>
+        </div>
+
+        <!-- 姓名 -->
+        <div class="form-group">
+            <label class="required">姓名</label>
+            <input type="text" id="name" name="name"
+                   placeholder="请输入姓名（2-20个字符）"
+                   onblur="validateName()">
+            <span class="error-msg" id="nameError">姓名不能为空，长度为2-20个字符</span>
+        </div>
+
+        <!-- 性别 -->
+        <div class="form-group">
+            <label class="required">性别</label>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="gender" value="男" onclick="clearGenderError()"> 男
+                </label>
+                <label>
+                    <input type="radio" name="gender" value="女" onclick="clearGenderError()"> 女
+                </label>
+            </div>
+            <span class="error-msg" id="genderError">请选择性别</span>
+        </div>
+
+        <!-- 出生日期 -->
+        <div class="form-group">
+            <label class="required">出生日期</label>
+            <input type="date" id="birthDate" name="birthDate"
+                   onchange="validateBirthDate()">
+            <span class="error-msg" id="birthDateError">请选择有效的出生日期</span>
+        </div>
+
+        <!-- 联系方式（电话） -->
+        <div class="form-group">
+            <label>联系方式</label>
+            <input type="tel" id="phone" name="phone"
+                   placeholder="请输入手机号（如：13800138000）"
+                   onblur="validatePhone()">
+            <span class="error-msg" id="phoneError">请输入正确的手机号格式</span>
+        </div>
+
+        <!-- 邮箱 -->
+        <div class="form-group">
+            <label>邮箱</label>
+            <input type="email" id="email" name="email"
+                   placeholder="请输入邮箱（如：example@qq.com）"
+                   onblur="validateEmail()">
+            <span class="error-msg" id="emailError">请输入正确的邮箱格式</span>
+        </div>
+
+        <!-- 地址 -->
+        <div class="form-group">
+            <label>地址</label>
+            <input type="text" id="address" name="address"
+                   placeholder="请输入家庭地址">
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="btn-group">
+            <button type="submit" class="btn btn-submit">💾 保 存</button>
+            <button type="reset" class="btn btn-reset">🔄 重 置</button>
+            <a href="/student/list" class="btn btn-back">↩ 返 回</a>
+        </div>
+    </form>
+</div>
+
+<!-- ==================== 前端验证脚本 ==================== -->
+<script>
+    // 验证学号
+    function validateStudentNo() {
+        var input = document.getElementById('studentNo');
+        var error = document.getElementById('studentNoError');
+        var value = input.value.trim();
+
+        if (value === '') {
+            showError(input, error, '学号不能为空');
+            return false;
+        }
+        if (!/^\d{6,10}$/.test(value)) {
+            showError(input, error, '学号格式不正确（应为6-10位数字）');
+            return false;
+        }
+        hideError(input, error);
+        return true;
+    }
+
+    // 验证姓名
+    function validateName() {
+        var input = document.getElementById('name');
+        var error = document.getElementById('nameError');
+        var value = input.value.trim();
+
+        if (value === '') {
+            showError(input, error, '姓名不能为空');
+            return false;
+        }
+        if (value.length < 2 || value.length > 20) {
+            showError(input, error, '姓名长度应为2-20个字符');
+            return false;
+        }
+        hideError(input, error);
+        return true;
+    }
+
+    // 验证性别
+    function validateGender() {
+        var selected = document.querySelector('input[name="gender"]:checked');
+        var error = document.getElementById('genderError');
+
+        if (!selected) {
+            error.style.display = 'block';
+            return false;
+        }
+        error.style.display = 'none';
+        return true;
+    }
+
+    function clearGenderError() {
+        document.getElementById('genderError').style.display = 'none';
+    }
+
+    // 验证出生日期
+    function validateBirthDate() {
+        var input = document.getElementById('birthDate');
+        var error = document.getElementById('birthDateError');
+        var value = input.value;
+
+        if (value === '') {
+            showError(input, error, '请选择出生日期');
+            return false;
+        }
+
+        var birthDate = new Date(value);
+        var today = new Date();
+
+        if (birthDate > today) {
+            showError(input, error, '出生日期不能是未来日期');
+            return false;
+        }
+
+        hideError(input, error);
+        return true;
+    }
+
+    // 验证手机号（非必填，但填了就要验证格式）
+    function validatePhone() {
+        var input = document.getElementById('phone');
+        var error = document.getElementById('phoneError');
+        var value = input.value.trim();
+
+        if (value === '') {
+            hideError(input, error);
+            return true;
+        }
+
+        if (!/^1[3-9]\d{9}$/.test(value)) {
+            showError(input, error, '请输入正确的手机号格式');
+            return false;
+        }
+
+        hideError(input, error);
+        return true;
+    }
+
+    // 验证邮箱（非必填，但填了就要验证格式）
+    function validateEmail() {
+        var input = document.getElementById('email');
+        var error = document.getElementById('emailError');
+        var value = input.value.trim();
+
+        if (value === '') {
+            hideError(input, error);
+            return true;
+        }
+
+        if (!/^[\w-]+@[\w-]+\.[a-zA-Z]{2,}$/.test(value)) {
+            showError(input, error, '请输入正确的邮箱格式');
+            return false;
+        }
+
+        hideError(input, error);
+        return true;
+    }
+
+    // 显示错误
+    function showError(input, errorElement, message) {
+        input.classList.add('error');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+
+    // 隐藏错误
+    function hideError(input, errorElement) {
+        input.classList.remove('error');
+        errorElement.style.display = 'none';
+    }
+
+    // 表单提交时的总验证
+    function validateForm() {
+        var valid = true;
+
+        if (!validateStudentNo()) valid = false;
+        if (!validateName()) valid = false;
+        if (!validateGender()) valid = false;
+        if (!validateBirthDate()) valid = false;
+        if (!validatePhone()) valid = false;
+        if (!validateEmail()) valid = false;
+
+        if (!valid) {
+            alert('请检查表单中的错误信息！');
+        }
+
+        return valid;
+    }
+</script>
+</body>
+</html>

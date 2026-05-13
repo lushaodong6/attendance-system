@@ -1,6 +1,6 @@
-package dao;
+package com.example.attendance.dao;
 
-import entity.Student;
+import com.example.attendance.entity.Student;
 import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;

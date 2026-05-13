@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生列表 - 学生管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+
+        /* 提示信息 */
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            white-space: pre-line;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fff5f5;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        /* 头部 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h2 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        .btn-batch-delete {
+            background: #dc3545;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: none;
+        }
+
+        .btn-batch-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-batch-delete.show {
+            display: inline-block;
+        }
+
+        /* 工具栏 */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* 搜索框 */
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            width: 300px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-search {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-search:hover {
+            background: #5a67d8;
+        }
+
+        .btn-clear {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        /* 排序按钮 */
+        .sort-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-sort {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #4a5568;
+        }
+
+        .btn-sort:hover,
+        .btn-sort.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* 表格 */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px 12px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        tbody tr.selected {
+            background-color: #eef2ff;
+        }
+
+        /* 复选框 */
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        /* 性别标签 */
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .tag-male {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .tag-female {
+            background: #fff5f5;
+            color: #c53030;
+        }
+
+        /* 操作按钮 */
+        .btn-edit {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-edit:hover { background: #218838; }
+        .btn-delete:hover { background: #c82333; }
+
+        /* 空状态 */
+        .empty-row td {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 50px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* 底部 */
+        .footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .select-all-label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 页面头部 -->
+    <div class="header">
+        <h2>📋 学生信息列表</h2>
+        <div class="header-right">
+            <button class="btn-batch-delete" id="batchDeleteBtn"
+                    onclick="batchDelete()">🗑️ 批量删除</button>
+            <a href="/student/add" class="btn-add">➕ 新增学生</a>
+        </div>
+    </div>
+
+    <!-- 提示信息 -->
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"
+         th:classappend="show"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"
+         th:classappend="show"></div>
+
+    <!-- 工具栏：搜索 + 排序 -->
+    <div class="toolbar">
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput"
+                   placeholder="🔍 输入学号或姓名搜索..."
+                   th:value="${keyword}">
+            <button class="btn-search" onclick="searchStudents()">搜索</button>
+            <a href="/student/list" class="btn-clear" th:if="${keyword}">清除</a>
+        </div>
+        <div class="sort-buttons">
+            <span style="line-height:36px;color:#888;margin-right:5px;">排序：</span>
+            <a href="/student/list?sort=id&keyword=" th:classappend="${sort == 'id' or sort == null} ? 'active'"
+               class="btn-sort">默认</a>
+            <a href="/student/list?sort=studentNo&keyword=" th:classappend="${sort == 'studentNo'} ? 'active'"
+               class="btn-sort">按学号 ↑</a>
+            <a href="/student/list?sort=name&keyword=" th:classappend="${sort == 'name'} ? 'active'"
+               class="btn-sort">按姓名 ↑</a>
+        </div>
+    </div>
+
+    <!-- ==================== 学生列表表格 ==================== -->
+    <form id="batchForm" action="/student/batchDelete" method="post">
+        <div class="table-wrapper">
+            <table border="1" cellpadding="10" cellspacing="0">
+                <thead>
+                <tr>
+                    <th class="checkbox-cell">
+                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+                    </th>
+                    <th>学号</th>
+                    <th>姓名</th>
+                    <th>性别</th>
+                    <th>年龄</th>
+                    <th>出生日期</th>
+                    <th>联系方式</th>
+                    <th>邮箱</th>
+                    <th>地址</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${#lists.isEmpty(students)}">
+                    <td colspan="10" class="empty-row">
+                        <span class="empty-icon">📭</span>
+                        暂无学生数据，请点击"新增学生"添加
+                    </td>
+                </tr>
+                <tr th:each="student : ${students}" th:object="${student}">
+                    <td class="checkbox-cell">
+                        <input type="checkbox" name="ids" th:value="${student.id}"
+                               class="student-checkbox" onclick="updateBatchDeleteBtn()">
+                    </td>
+                    <td th:text="${student.studentNo}">2024001</td>
+                    <td><strong th:text="${student.name}">张三</strong></td>
+                    <td>
+                                <span th:class="${student.gender == '男'} ? 'tag tag-male' : 'tag tag-female'"
+                                      th:text="${student.gender}">男</span>
+                    </td>
+                    <td th:text="${student.age} + '岁'">20岁</td>
+                    <td th:text="${student.birthDate}">2004-05-15</td>
+                    <td th:text="${student.phone}">13800138000</td>
+                    <td th:text="${student.email}">zhangsan@qq.com</td>
+                    <td th:text="${student.address}">北京市</td>
+                    <td>
+                        <a th:href="@{/student/edit/{id}(id=${student.id})}"
+                           class="btn-edit">✏️ 修改</a>
+                        <a th:href="@{/student/delete/{id}(id=${student.id})}"
+                           class="btn-delete"
+                           onclick="return confirm('确定删除学生 '+this.parentNode.parentNode.children[2].innerText+' 吗？')">
+                            🗑️ 删除</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <input type="hidden" name="ids" id="batchIds">
+    </form>
+
+    <!-- 底部信息 -->
+    <div class="footer">
+        <label class="select-all-label">
+            <input type="checkbox" onclick="toggleSelectAll(this)">
+            全选 / 取消全选
+        </label>
+        <span>共 <strong th:text="${#lists.size(students)}">0</strong> 条记录</span>
+    </div>
+</div>
+
+<!-- ==================== 脚本 ==================== -->
+<script>
+    // 搜索功能
+    function searchStudents() {
+        var keyword = document.getElementById('searchInput').value.trim();
+        if (keyword) {
+            window.location.href = '/student/list?keyword=' + encodeURIComponent(keyword);
+        }
+    }
+
+    // 回车键搜索
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchStudents();
+        }
+    });
+
+    // 全选/取消全选
+    function toggleSelectAll(source) {
+        var checkboxes = document.querySelectorAll('.student-checkbox');
+        checkboxes.forEach(function(cb) {
+            cb.checked = source.checked;
+        });
+        updateBatchDeleteBtn();
+    }
+
+    // 更新批量删除按钮显示
+    function updateBatchDeleteBtn() {
+        var checkedCount = document.querySelectorAll('.student-checkbox:checked').length;
+        var batchBtn = document.getElementById('batchDeleteBtn');
+        var selectAll = document.getElementById('selectAll');
+
+        if (checkedCount > 0) {
+            batchBtn.classList.add('show');
+        } else {
+            batchBtn.classList.remove('show');
+            selectAll.checked = false;
+        }
+
+        // 高亮选中行
+        document.querySelectorAll('.student-checkbox').forEach(function(cb) {
+            if (cb.checked) {
+                cb.closest('tr').classList.add('selected');
+            } else {
+                cb.closest('tr').classList.remove('selected');
+            }
+        });
+    }
+
+    // 批量删除
+    function batchDelete() {
+        var checked = document.querySelectorAll('.student-checkbox:checked');
+
+        if (checked.length === 0) {
+            alert('请选择要删除的学生！');
+            return;
+        }
+
+        if (!confirm('确定要删除选中的 ' + checked.length + ' 名学生吗？\n此操作不可恢复！')) {
+            return;
+        }
+
+        // 收集选中的ID
+        var ids = [];
+        checked.forEach(function(cb) {
+            ids.push(cb.value);
+        });
+
+        // 设置隐藏域的值
+        document.getElementById('batchIds').value = ids.join(',');
+
+        // 提交表单
+        document.getElementById('batchForm').submit();
+    }
+</script>
+</body>
+</html>
