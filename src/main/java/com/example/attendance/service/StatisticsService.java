@@ -25,12 +25,13 @@ public class StatisticsService {
     private StudentRepository studentRepository;
 
     /**
-     * 按周统计出勤率
+     * 按周统计出勤率（指定日期所在周，周一至周日）
      */
     public StatisticsDTO getWeeklyStatistics(LocalDate date) {
         LocalDate startOfWeek = date.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
         LocalDate endOfWeek = startOfWeek.plusDays(6);
-        return calculateStatistics(startOfWeek, endOfWeek, "WEEK", startOfWeek.toString() + " 至 " + endOfWeek.toString());
+        return calculateStatistics(startOfWeek, endOfWeek, "WEEK",
+                startOfWeek.toString() + " 至 " + endOfWeek.toString());
     }
 
     /**
@@ -39,11 +40,12 @@ public class StatisticsService {
     public StatisticsDTO getMonthlyStatistics(int year, int month) {
         LocalDate startOfMonth = LocalDate.of(year, month, 1);
         LocalDate endOfMonth = startOfMonth.with(TemporalAdjusters.lastDayOfMonth());
-        return calculateStatistics(startOfMonth, endOfMonth, "MONTH", year + "-" + String.format("%02d", month));
+        return calculateStatistics(startOfMonth, endOfMonth, "MONTH",
+                year + "-" + String.format("%02d", month));
     }
 
     /**
-     * 班级整体出勤率统计
+     * 按班级统计出勤率（指定班级、日期范围）
      */
     public StatisticsDTO getClassStatistics(String className, LocalDate startDate, LocalDate endDate) {
         List<Attendance> attendances = attendanceRepository.findByClassNameAndDateBetween(className, startDate, endDate);
@@ -52,7 +54,9 @@ public class StatisticsService {
 
         long total = attendances.size();
         long present = statusCounts.getOrDefault("出勤", 0L);
-        BigDecimal rate = total == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        BigDecimal rate = total == 0 ? BigDecimal.ZERO :
+                BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
 
         StatisticsDTO dto = new StatisticsDTO();
         dto.setPeriod("CLASS");
@@ -63,7 +67,7 @@ public class StatisticsService {
     }
 
     /**
-     * 所有班级整体出勤率统计 (按班级分组)
+     * 获取所有班级的出勤率（指定日期范围）
      */
     public Map<String, BigDecimal> getAllClassesRates(LocalDate startDate, LocalDate endDate) {
         List<Student> allStudents = studentRepository.findAll();
@@ -83,15 +87,21 @@ public class StatisticsService {
             List<Attendance> list = entry.getValue();
             long total = list.size();
             long present = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
-            BigDecimal rate = total == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+            BigDecimal rate = total == 0 ? BigDecimal.ZERO :
+                    BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
             result.put(className, rate);
         }
         return result;
     }
 
+    /**
+     * 通用统计方法（按周/月）
+     */
     private StatisticsDTO calculateStatistics(LocalDate startDate, LocalDate endDate, String periodType, String periodValue) {
         List<Attendance> attendances = attendanceRepository.findByDateBetween(startDate, endDate);
-        // 按班级分组计算
+
+        // 按班级分组
         Map<String, List<Attendance>> classMap = new HashMap<>();
         for (Attendance a : attendances) {
             String className = a.getStudent().getClassName();
@@ -107,11 +117,15 @@ public class StatisticsService {
             long present = list.stream().filter(a -> "出勤".equals(a.getStatus())).count();
             totalAll += total;
             presentAll += present;
-            BigDecimal rate = total == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+            BigDecimal rate = total == 0 ? BigDecimal.ZERO :
+                    BigDecimal.valueOf(present).divide(BigDecimal.valueOf(total), 4, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
             classRates.put(entry.getKey(), rate);
         }
 
-        BigDecimal overallRate = totalAll == 0 ? BigDecimal.ZERO : BigDecimal.valueOf(presentAll).divide(BigDecimal.valueOf(totalAll), 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        BigDecimal overallRate = totalAll == 0 ? BigDecimal.ZERO :
+                BigDecimal.valueOf(presentAll).divide(BigDecimal.valueOf(totalAll), 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
 
         // 各状态统计
         Map<String, Long> statusCounts = attendances.stream()
