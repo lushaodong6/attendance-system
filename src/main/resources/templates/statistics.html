@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>出勤统计报告</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .rate { font-size: 24px; font-weight: bold; color: #2c7da0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { margin: 5px; padding: 8px 16px; cursor: pointer; }
+        input, select { padding: 6px; margin: 5px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>出勤统计报告</h2>
+
+    <div class="card">
+        <h3>按周统计</h3>
+        <input type="date" id="weekDate" value="2026-05-27">
+        <button onclick="loadWeekly()">查询</button>
+        <div id="weekResult"></div>
+    </div>
+
+    <div class="card">
+        <h3>按月统计</h3>
+        <input type="number" id="year" placeholder="年" value="2026">
+        <input type="number" id="month" placeholder="月" value="5">
+        <button onclick="loadMonthly()">查询</button>
+        <div id="monthResult"></div>
+    </div>
+
+    <div class="card">
+        <h3>班级整体统计</h3>
+        <input type="text" id="className" placeholder="班级名称">
+        <input type="date" id="classStartDate">
+        <input type="date" id="classEndDate">
+        <button onclick="loadClassStats()">查询</button>
+        <div id="classResult"></div>
+    </div>
+
+    <div class="card">
+        <h3>所有班级出勤率对比</h3>
+        <input type="date" id="allStartDate">
+        <input type="date" id="allEndDate">
+        <button onclick="loadAllClasses()">查询</button>
+        <div id="allClassesResult"></div>
+    </div>
+</div>
+
+<script>
+    function displayStats(data, containerId) {
+        const container = document.getElementById(containerId);
+        if (!data) {
+            container.innerHTML = '<p>无数据</p>';
+            return;
+        }
+        let html = `<p>整体出勤率: <span class="rate">${data.overallRate}%</span></p>`;
+        if (data.classRates) {
+            html += '<h4>各班级出勤率</h4><table><tr><th>班级</th><th>出勤率</th></tr>';
+            for (let [cls, rate] of Object.entries(data.classRates)) {
+                html += `<tr><td>${cls}</td><td>${rate}%</td></tr>`;
+            }
+            html += '</table>';
+        }
+        if (data.statusCounts) {
+            html += '<h4>出勤状态分布</h4><table><tr><th>状态</th><th>次数</th></tr>';
+            for (let [status, count] of Object.entries(data.statusCounts)) {
+                html += `<tr><td>${status}</td><td>${count}</td></tr>`;
+            }
+            html += '</table>';
+        }
+        container.innerHTML = html;
+    }
+
+    function loadWeekly() {
+        const date = document.getElementById('weekDate').value;
+        fetch(`/api/statistics/week?date=${date}`)
+            .then(res => res.json())
+            .then(data => displayStats(data, 'weekResult'));
+    }
+
+    function loadMonthly() {
+        const year = document.getElementById('year').value;
+        const month = document.getElementById('month').value;
+        fetch(`/api/statistics/month?year=${year}&month=${month}`)
+            .then(res => res.json())
+            .then(data => displayStats(data, 'monthResult'));
+    }
+
+    function loadClassStats() {
+        const className = document.getElementById('className').value;
+        const startDate = document.getElementById('classStartDate').value;
+        const endDate = document.getElementById('classEndDate').value;
+        if (!className || !startDate || !endDate) {
+            alert('请填写完整');
+            return;
+        }
+        fetch(`/api/statistics/class?className=${encodeURIComponent(className)}&startDate=${startDate}&endDate=${endDate}`)
+            .then(res => res.json())
+            .then(data => displayStats(data, 'classResult'));
+    }
+
+    function loadAllClasses() {
+        const startDate = document.getElementById('allStartDate').value;
+        const endDate = document.getElementById('allEndDate').value;
+        if (!startDate || !endDate) {
+            alert('请选择日期范围');
+            return;
+        }
+        fetch(`/api/statistics/classes-rates?startDate=${startDate}&endDate=${endDate}`)
+            .then(res => res.json())
+            .then(data => {
+                const container = document.getElementById('allClassesResult');
+                let html = '<table><tr><th>班级</th><th>出勤率</th></tr>';
+                for (let [cls, rate] of Object.entries(data)) {
+                    html += `<tr><td>${cls}</td><td>${rate}%</td></tr>`;
+                }
+                html += '</table>';
+                container.innerHTML = html;
+            });
+    }
+</script>
+</body>
+</html>

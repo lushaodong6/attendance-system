@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>上传出勤记录</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .container { max-width: 800px; margin: auto; }
+        .progress { width: 100%; background-color: #f0f0f0; margin: 10px 0; display: none; }
+        .progress-bar { width: 0%; height: 30px; background-color: #4caf50; text-align: center; line-height: 30px; color: white; }
+        .error { color: red; }
+        .success { color: green; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>上传出勤Excel文件</h2>
+    <form id="uploadForm" enctype="multipart/form-data" method="post" action="/upload">
+        <input type="file" name="file" id="file" accept=".xlsx,.xls" required>
+        <button type="submit">上传</button>
+        <div class="progress" id="progressContainer">
+            <div class="progress-bar" id="progressBar">0%</div>
+        </div>
+    </form>
+
+    <!-- 上传结果显示 -->
+    <div th:if="${result != null}">
+        <hr>
+        <h3>上传结果</h3>
+        <p>总记录数: <span th:text="${result.totalRecords}"></span></p>
+        <p class="success">成功: <span th:text="${result.successCount}"></span></p>
+        <p class="error">失败: <span th:text="${result.failCount}"></span></p>
+
+        <div th:if="${not result.errors.isEmpty()}">
+            <h4>失败详情</h4>
+            <table>
+                <thead>
+                <tr><th>行号</th><th>学号</th><th>错误信息</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="err : ${result.errors}">
+                    <td th:text="${err.row}"></td>
+                    <td th:text="${err.studentId}"></td>
+                    <td th:text="${err.message}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <hr>
+    <a href="/statistics">查看统计报表</a>
+</div>
+
+<script>
+    // 上传进度显示 (使用XMLHttpRequest)
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', function(e) {
+        const fileInput = document.getElementById('file');
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('请选择文件');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        if (file.size > 10 * 1024 * 1024) {
+            e.preventDefault();
+            alert('文件大小不能超过10MB');
+            return;
+        }
+
+        // 显示进度条
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        progressContainer.style.display = 'block';
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload', true);
+
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.textContent = percent + '%';
+            }
+        };
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // 替换整个页面内容
+                document.open();
+                document.write(xhr.responseText);
+                document.close();
+            } else {
+                alert('上传失败');
+                progressContainer.style.display = 'none';
+            }
+        };
+
+        xhr.onerror = function() {
+            alert('上传出错');
+            progressContainer.style.display = 'none';
+        };
+
+        const formData = new FormData(form);
+        xhr.send(formData);
+        e.preventDefault();
+    });
+</script>
+</body>
+</html>
