@@ -1,38 +1,26 @@
 plugins {
-    id 'org.springframework.boot' version '2.7.0'   // Spring Boot 插件
+    id 'org.springframework.boot' version '2.7.0'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
 }
 
 group = 'com.example'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'   // 或 '17'
+version = '1.0.0'
+sourceCompatibility = '11'
 
 repositories {
-    mavenCentral()           // 依赖下载源
+    mavenCentral()
 }
 
 dependencies {
-    // Spring Boot Web (MVC)
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
-    // Thymeleaf 模板引擎 (用于前端页面)
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-
-    // Spring Data JPA (ORM)
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'com.h2database:h2'
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'commons-fileupload:commons-fileupload:1.5'
 
-    // H2 内存数据库 (用于开发测试，也可换 MySQL)
-    runtimeOnly 'com.h2database:h2'
-
-    // Lombok (简化实体类代码)
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    // 可选：Spring Boot DevTools (热部署)
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
-    // 测试依赖
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
